@@ -21,9 +21,10 @@ export default class {
     }
   }
 
-  finish() {
-    this.dataBuffer.push(this.encoder.flush())
-    const blob = new Blob(this.dataBuffer, { type: 'audio/mp3' })
+  finish(newDataBuffer = null, options = { type: 'audio/mp3' }) {
+    if(!newDataBuffer) this.dataBuffer.push(this.encoder.flush())
+    else this.dataBuffer = newDataBuffer;
+    const blob = new Blob(this.dataBuffer, options)
     this.dataBuffer = []
 
     return {

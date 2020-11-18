@@ -103,7 +103,8 @@
     props: {
       src      : { type: String },
       record   : { type: Object },
-      filename : { type: String }
+      filename : { type: String },
+      autoplay : { type: Boolean },
     },
     data () {
       return {
@@ -119,11 +120,11 @@
       VolumeControl
     },
     mounted: function() {
-      this.player = document.getElementById(this.playerUniqId)
+      this.player = document.getElementById(this.playerUniqId);
 
       this.player.addEventListener('ended', () => {
         this.isPlaying = false
-      })
+      });
 
       this.player.addEventListener('loadeddata', (ev) => {
         this._resetProgress()
@@ -132,9 +133,11 @@
 
       this.player.addEventListener('timeupdate', this._onTimeUpdate)
 
-      this.$eventBus.$on('remove-record', () => {
+      this.$root.$on('remove-record', () => {
         this._resetProgress()
       })
+      if (this.autoplay) this.playback()
+
     },
     computed: {
       audioSource () {
@@ -143,7 +146,6 @@
           return url
         } else {
           this._resetProgress()
-
         }
         return ''
       },
@@ -161,12 +163,16 @@
         }
 
         if (this.isPlaying) {
-          this.player.pause()
+          this.player.pause();
+          this.isPlaying = false;
         } else {
-          setTimeout(() => { this.player.play() }, 0)
+          setTimeout(() => {
+            this.isPlaying = true;
+          this.player.play();
+          }, 500);
+
         }
 
-        this.isPlaying = !this.isPlaying
       },
       _resetProgress () {
         if (this.isPlaying) {
