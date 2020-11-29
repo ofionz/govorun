@@ -1,8 +1,11 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
- import userInfo from './userInfo'
+import Vue from "vue";
+import Vuex from "vuex";
+import userInfo from "./userInfo";
+import tasks from "./tasks";
+import audios from "./audios";
+import calls from "./calls";
 
-Vue.use(Vuex)
+Vue.use(Vuex);
 
 /*
  * If not building with SSR mode, you can
@@ -13,13 +16,15 @@ Vue.use(Vuex)
  * with the Store instance.
  */
 
-export default function (/* { ssrContext } */) {
+export default function(/* { ssrContext } */) {
   const Store = new Vuex.Store({
     modules: {
-      userInfo
-    },
+      userInfo,
+      tasks,
+      calls,
+      audios
+    }
+  });
 
-  })
-
-  return Store
+  return Store;
 }

@@ -14,9 +14,14 @@
 
         <q-toolbar-title>
           Govorun App
+          <q-icon
+            style="top: -1px"
+            size="sm"
+            name="perm_phone_msg"
+          />
         </q-toolbar-title>
 
-        <div>Govorun v- 0.2</div>
+        <div>Govorun v- 0.3</div>
       </q-toolbar>
     </q-header>
 
@@ -61,9 +66,16 @@ const linksData = [
   },
 
   {
-    title: "Задачи",
+    title: "Рассылки",
     icon: "add_task",
     link: "tasks"
+  }
+  ,
+
+  {
+    title: "Звонки",
+    icon: "phone_in_talk",
+    link: "calls"
   }
 ];
 

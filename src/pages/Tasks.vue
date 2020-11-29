@@ -1,36 +1,11 @@
 <template>
   <div class="flex flex-center">
     <q-dialog v-model="newTaskModal">
-      <q-card>
-        <q-card-section class="q-pa-none">
-          <newTaskModal
-            @saved="addTask"
-            @close="newTaskModal = false"
-          ></newTaskModal>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-
-    <q-dialog v-model="edit" v-if="edit" persistent>
-      <q-card style="min-width: 350px">
-        <q-card-section>
-          <div class="text-h6">Введите новое название</div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-none">
-          <q-input
-            dense
-            v-model="newName"
-            autofocus
-            @keyup.enter="edit = false"
-          />
-        </q-card-section>
-
-        <q-card-actions align="right" class="text-primary">
-          <q-btn flat label="Отмена" @click="closeModal" />
-          <q-btn flat label="Сохранить" @click="saveNeqNameRecord" />
-        </q-card-actions>
-      </q-card>
+      <newTaskModal
+        :editedTask="currentTask"
+        @saved="addTask"
+        @close="newTaskModal = false"
+      ></newTaskModal>
     </q-dialog>
 
     <q-dialog
@@ -42,7 +17,7 @@
         <q-card-section class="row items-center">
           <q-avatar icon="delete" color="primary" text-color="white" />
           <span class="q-ml-sm"
-            >Вы действительно хотите удалить задание ?</span
+            >Вы действительно хотите удалить рассылку ?</span
           >
         </q-card-section>
 
@@ -54,12 +29,12 @@
     </q-dialog>
     <div class="q-pa-md table_wrap">
       <q-table
-        title="Задания"
+        title="Рассылки"
         class="table"
         :data="tasks"
         :columns="columns"
         row-key="name"
-        rows-per-page-label="Заданий на странице"
+        rows-per-page-label="Рассылок на странице"
         :rows-per-page-options="[10, 20, 50]"
         :pagination-label="
           (firstRowIndex, endRowIndex, totalRowsNumber) =>
@@ -72,13 +47,13 @@
             style=" width: 100%; justify-content: space-between; align-items: center"
             class="flex"
           >
-            <span class="text-h6" style=" color: gray"> Задания </span>
+            <span class="text-h6" style=" color: gray"> Рассылки </span>
             <q-btn
               @click="newTaskModal = !newTaskModal"
               padding="10px 20px"
               color="primary"
               push
-              >Добавить задание</q-btn
+              >Добавить рассылку</q-btn
             >
           </div>
         </template>
@@ -88,39 +63,31 @@
             class="full-width row flex-center text-center  text-primary q-gutter-sm"
           >
             <q-icon size="2em" name="sentiment_dissatisfied" />
-            <span>
+            <span class="cursor-pointer">
               Записей пока нет. Нажмите на эту надпись или на кнопку добавить
-              задание чтобы создать новое.
+              рассылку чтобы создать новое.
             </span>
           </div>
         </template>
 
         <template v-slot:body="props">
           <q-tr :props="props">
-            <q-td
-              @click="playRecord($event, props.row)"
-              key="name"
-              :props="props"
-            >
-              {{ props.row.name }}
+            <q-td key="name" :props="props">
+              {{ props.row.other.name }}
             </q-td>
-            <q-td key="status" :props="props">
-              {{ props.row.status }}
-            </q-td>
-            <q-td key="duration" :props="props">
-              {{ props.row.duration }}
+            <q-td key="phones" :props="props">
+              {{ props.row.phones.length }}
             </q-td>
 
-            <q-td key="edit" auto-width class="text-primary" :props="props">
+            <q-td
+              key="edit"
+              auto-width
+              class="text-primary cursor-pointer"
+              :props="props"
+            >
               <q-icon
                 style="top: -2px"
-                @click="
-                  () => {
-                    newName = props.row.name;
-                    currentTask = props.row;
-                    edit = true;
-                  }
-                "
+                @click="editTask(props.row)"
                 size="xs"
                 name="create"
               />
@@ -135,7 +102,7 @@
               "
               style="top: -2px"
               auto-width
-              class="text-primary"
+              class="text-primary cursor-pointer"
               :props="props"
             >
               <q-icon size="xs" name="delete" />
@@ -148,22 +115,29 @@
 </template>
 
 <script>
-  import newTaskModal from './newTaskModal';
+import newTaskModal from "./newTaskModal";
 
 export default {
   name: "Main",
-  components: {  newTaskModal },
+  components: { newTaskModal },
+  async created() {
+    const context = this;
+    await this.$store
+      .dispatch("tasks/fetchTasks")
+      .then(() => context.updateData())
+      .catch(err => this.$logger("Ошибка обновления списка рассылок. " + err));
+  },
 
   data: () => {
     return {
-      edit: false,
       isDeleteModalVisible: false,
       newTaskModal: false,
       newName: "",
       currentTask: undefined,
       tasks: [
         {
-          name : "задание 1",
+          phones: [],
+          other: { name: "" }
         }
       ],
 
@@ -180,12 +154,17 @@ export default {
           required: true,
           label: "Наименование",
           align: "left",
-          field: row => row.name,
+          field: row => row.other.name,
           format: val => `${val}`,
           style: "min-width: 150px; white-space: normal",
           sortable: true
         },
-
+        {
+          name: "phones",
+          required: true,
+          label: "Номеров в базе обзвона",
+          align: "center"
+        },
         {
           name: "edit",
           required: true,
@@ -202,13 +181,44 @@ export default {
     };
   },
   methods: {
-    addTask(newTask) {
-      this.tasks.push(newTask);
+    updateData() {
+      this.tasks = this.$store.state.tasks.tasks;
+      this.currentTask = undefined;
+      this.newTaskModal = false;
     },
+    editTask(task) {
+      this.currentTask = task;
+      this.newTaskModal = true;
+    },
+    addTask(newTask) {
+      if (this.currentTask) this.updateCurrentTask(newTask);
+      else {
+        const context = this;
+        this.$store
+          .dispatch("tasks/addTask", newTask)
+          .then(() => context.updateData())
+          .catch(err =>
+            this.$logger(
+              "Ошибка добавления задачи - запись не была сохранена." + err
+            )
+          );
+      }
+    },
+
+    updateCurrentTask(newTask) {
+      const context = this;
+      this.$store
+        .dispatch("tasks/editTask", newTask)
+        .then(() => context.updateData())
+        .catch(err =>
+          this.$logger(
+            "Ошибка изменения задачи - запись не была сохранена." + err
+          )
+        );
+    },
+
     deleteTask() {
-      const indx = this.tasks.findIndex(
-        e => e.name === this.currentTask.name
-      );
+      const indx = this.tasks.findIndex(e => e.id === this.currentTask.id);
       this.tasks.splice(indx, 1);
       this.closeModal();
     },
@@ -218,14 +228,8 @@ export default {
       this.player = false;
       this.currentTask = undefined;
       this.newName = undefined;
-    },
-    saveNeqNameRecord() {
-      const record = this.tasks.find(e => e.name === this.currentTask.name);
-      this.edit = false;
-      record.name = this.newName;
-      this.closeModal();
     }
-  },
+  }
 };
 </script>
 

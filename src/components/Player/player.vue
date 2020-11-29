@@ -99,10 +99,13 @@
   import VolumeControl from './volume-control'
   import { convertTimeMMSS } from '../../lib/utils'
 
+  import fromFile from "../../lib/audio-from-file";
+
   export default {
     props: {
       src      : { type: String },
       record   : { type: Object },
+      blob : { type: Blob },
       filename : { type: String },
       autoplay : { type: Boolean },
     },
@@ -139,16 +142,17 @@
       if (this.autoplay) this.playback()
 
     },
+
     computed: {
-      audioSource () {
-        const url = this.src || this.record.url
-        if (url) {
-          return url
-        } else {
-          this._resetProgress()
-        }
-        return ''
-      },
+     audioSource() {
+        const url = this.src || this.record?.url || window.URL.createObjectURL(this.blob);
+       if (url) {
+         return url
+       } else {
+         this._resetProgress()
+       }
+       return ''
+     },
       playBtnIcon () {
         return this.isPlaying ? 'pause' : 'play'
       },

@@ -1,10 +1,9 @@
 <template>
-  <div class="wrap">
+  <div   :class="$style.wrap">
     <q-btn-toggle
       v-model="model"
       push
       glossy
-      class="toggles"
       @input="resetRecord"
       toggle-color="primary"
       :options="[
@@ -36,7 +35,8 @@
     <transition name="slide-left">
       <q-input
         v-if="record"
-        class="recordName  q-mt-lg"
+        :class="$style.recordName"
+        class="q-mt-lg"
         label="Введите название аудиоролика"
         :rules="[val => !!val || 'Введите название аудиоролика']"
         v-model="recordName"
@@ -52,7 +52,8 @@
         v-if="record"
       />
     </transition>
-    <div class="flex q-my-md buttons_wrap">
+    <div class="flex q-my-md"
+         :class="$style.buttons_wrap">
       <q-btn
         @click="closePopup"
         padding="10px 40px"
@@ -83,6 +84,7 @@ import fromFile from "../lib/audio-from-file";
 export default {
   name: "newRecord",
   components: { audioRecorder, audioPlayer },
+
   data() {
     return {
       model: "file",
@@ -115,8 +117,8 @@ export default {
       if (!this.record || !this.recordName) return;
       this.record.name = this.recordName;
       this.record.status = "Неизвестен";
+
       this.$emit("saved", this.record);
-      this.$emit("close");
     },
     async closePopup() {
       this.$emit("close");
@@ -131,7 +133,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style scoped module  lang="scss">
 .wrap {
   overflow-x: hidden;
   margin: 0 auto;
@@ -144,36 +146,35 @@ export default {
 .recordName {
   width: 250px;
 }
-.toggles {
-  width: 100%;
-  & button {
-    width: 33.33333%;
-  }
-}
+
 .buttons_wrap {
   width: 100%;
   justify-content: space-around;
 }
 
-.slide-left-enter-active {
-  transition: all 0.7s ease !important;
-}
-.slide-left-enter {
-  transform: translateX(70vw) !important;
-}
 
-.slide-left2-enter-active {
-  transition: all 1s ease !important;
-}
-.slide-left2-enter {
-  transform: translateX(70vw) !important;
-}
+</style>
 
-.slide-right-enter-active {
-  transition: all 0.8s ease !important;
-}
+<style scoped lang="scss">
+  .slide-left-enter-active {
+    transition: all 0.7s ease !important;
+  }
+  .slide-left-enter {
+    transform: translateX(70vw) !important;
+  }
 
-.slide-right-enter {
-  transform: translateX(-70vw) !important;
-}
+  .slide-left2-enter-active {
+    transition: all 1s ease !important;
+  }
+  .slide-left2-enter {
+    transform: translateX(70vw) !important;
+  }
+
+  .slide-right-enter-active {
+    transition: all 0.8s ease !important;
+  }
+
+  .slide-right-enter {
+    transform: translateX(-70vw) !important;
+  }
 </style>

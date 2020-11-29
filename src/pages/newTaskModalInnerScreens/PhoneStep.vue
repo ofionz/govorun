@@ -14,11 +14,10 @@
     />
     <div class=" q-my-lg full-width" v-if="model === 'paste'">
       <q-input
-        v-model="phonesText"
+        v-model="rawPhones"
         filled
         autogrow
-        @input="checkPhones"
-        hint="Номера должны быть в формате +7(xxx)xxx-xx-xx, 7xxxxxxxxxx , 8xxxxxxxxxx или 8(xxx)xxx-xx-xx"
+        hint="Номера должны быть в формате +7(9xx)xxx-xx-xx, 79xxxxxxxxx , 89xxxxxxxxx, 8(9xx)xxx-xx-xx, 9xxxxxxxxx, (9xx)xxx-xx-xx разделенные пробелом и/или запятой."
         label="Вставьте сюда номера:"
       />
     </div>
@@ -32,22 +31,20 @@
         color="secondary"
       />
       <q-input
-        v-for="(phone, index) in phonesArr"
-        v-model="phonesArr[index]"
+        v-for="(elem, index) in phonesArr"
+        v-model="phonesArr[index].phone"
         :key="index"
         type="tel"
         class="input q-mt-sm"
-        @focusin="maskVisible = true"
         fill-mask
         unmasked-value
-        :ref = "'Телефон '+(index+1)"
+        ref="phone"
         mask="+7(###)###-##-##"
         error-message="Введите телефон"
-        :error="phone.length<10"
-        @input="checkPhones"
-        :label="'Телефон '+(index + 1) "
+        no-error-icon
+        :error="elem.phone.length < 10"
+        :label="'Телефон ' + (index + 1)"
       >
-
         <template v-slot:append>
           <q-icon
             @click="deletePhone(index)"
@@ -64,62 +61,100 @@
 <script>
 export default {
   name: "PhoneStep",
-  props:{
-    data : {
-      type: Function
-    },
-    addError: {
-      type: Function
+  props: {
+    phones: {
+      type: Array
     }
   },
+
   data() {
     return {
       model: "manual",
-      previousModel: 'manual',
+      previousModel: "manual",
       phonesArr: [],
       errors: [],
-      phonesText: ""
+      rawPhones: ""
     };
+  },
+  mounted() {
+    if (this.phones.length)
+      this.phonesArr = this.phones.map(elem => {
+        return { phone: elem };
+      });
   },
   methods: {
     addPhoneCell() {
-      this.phonesArr.splice(0, 0, []);
+      this.phonesArr.splice(0, 0, { phone: "" });
+      this.$nextTick(() => {
+        this.$refs.phone[0].focus();
+      });
     },
     deletePhone(indx) {
       this.phonesArr.splice(indx, 1);
     },
 
-  checkPhones (){
-      if (  this.model === "manual") {
-        for (const [key, value] of Object.entries(this.$refs)) {
-          if( value[0].hasError) {
-            this.errors.push({name: value[0].label, value: value[0].innerValue});
-            this.addError (this.errors);
-
-            //TODO решить вопрос с добавлением ошибок и удалением лишних,
-            // TODO а также с полем ввода путем вставки - нужна валидация и привод к одному формату
-          }
+    checkPhones() {
+      this.errors = [];
+      for (const key of this.phonesArr) {
+        if (key.phone.length !== 10 || key.phone.charAt(0) !== "9") {
+          const phone = `(${key.phone.substring(0, 3)})${key.phone.substring(
+            3,
+            6
+          )}-${key.phone.substring(6, 8)}-${key.phone.substring(8)}`;
+          if (key.raw) this.errors.push(key.raw);
+          else this.errors.push(phone);
         }
-        this.data(this.phonesArr)
       }
-      else if ( this.model === "paste") {
-        console.log(this.phonesText.split (' '))
-     //   this.data();
+      this.$emit("setErrors", this.errors);
+    },
 
+    getPhones() {
+      if (this.model === "paste") {
+        const rawArr = this.rawPhones.split(/[\s,]+/).filter(el => el.length);
+
+        const filteredArr = rawArr.map(elem => {
+          if (!elem.length) return;
+          let phone = elem.replace(/[^\d]/g, "");
+          if (
+            phone.length === 11 &&
+            (phone.charAt(0) === "7" || phone.charAt(0) === "8") &&
+            phone.charAt(1) === "9"
+          ) {
+            phone = phone.substring(1);
+          }
+          return { phone: phone, raw: elem };
+        });
+
+        this.phonesArr = filteredArr;
+      } else if (this.model === "manual") {
+        // Do nothing
       }
-        },
-  resetPhones() {
-      if(this.phonesArr.length ||this.phonesText.length)
-      this.$q.dialog ({message: 'Введенные номера телефонов будут потеряны!',ok: {label: 'Ок'},cancel: {label: 'Отмена'}}).onOk(() => {
-        this.phonesArr= [];
-        this.phonesText= "";
-        this.previousModel =  this.model;
-      }).onCancel(() => {
-        this.model=this.previousModel;
-        this.previousModel =  this.model;
-      })
+      this.checkPhones();
+      if (!this.errors.length)
+        this.$emit(
+          "setPhones",
+          this.phonesArr.map(elem => elem.phone)
+        );
+    },
 
-  }
+    resetPhones() {
+      if (this.phonesArr.length || this.rawPhones.length)
+        this.$q
+          .dialog({
+            message: "Введенные номера телефонов будут потеряны!",
+            ok: { label: "Ок" },
+            cancel: { label: "Отмена" }
+          })
+          .onOk(() => {
+            this.phonesArr = [];
+            this.rawPhones = "";
+            this.previousModel = this.model;
+          })
+          .onCancel(() => {
+            this.model = this.previousModel;
+            this.previousModel = this.model;
+          });
+    }
   }
 };
 </script>

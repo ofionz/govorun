@@ -25,7 +25,7 @@ export default class {
     if(!newDataBuffer) this.dataBuffer.push(this.encoder.flush())
     else this.dataBuffer = newDataBuffer;
     const blob = new Blob(this.dataBuffer, options)
-    this.dataBuffer = []
+    this.dataBuffer = [];
 
     return {
       id   : Date.now(),

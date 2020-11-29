@@ -3,16 +3,7 @@ import WavEncoder from './wav-encoder'
 import { convertTimeMMSS } from './utils'
 
 export default function (file) {
- //  const freader = new FileReader();
-    const encoderOptions = {
-      bitRate: 128,
-      sampleRate: 44100
-    };
-    const bufferSize = 4096
-    const wavSamples = [];
-    const lameEncoder = new Mp3Encoder(encoderOptions)
-    const _duration = 0
-
+  console.log(file);
     let record = null;
 
 
